@@ -1,0 +1,15 @@
+1. git (code)
+2. docker (containerization)
+3. jenkins (ci)
+4. owasp (dependency check)
+5. sonarqube (quality)
+6. trivy (file system check)
+7. argocd (cd)
+8. redis (caching)
+9. aws eks (kubernetes)
+10. helm (packaging)
+11. grafana and prometheus (monitoring)
+12. terraform (infrastructure)
+
+
+
