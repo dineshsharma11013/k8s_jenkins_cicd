@@ -1,0 +1,22 @@
+services:
+  testing_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dinesh11013/testing-demo:latest  
+    container_name: django_app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    healthcheck:
+        test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+    restart: unless-stopped     
+  
+
+
+
