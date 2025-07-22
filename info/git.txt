@@ -1,0 +1,23 @@
+webhook
+
+https://www.youtube.com/watch?v=Uu8_cb0WRAw --- How to configure Webhook in GitHub and Jenkins for automatic trigger with CICD pipeline | Jenkins
+
+
+
+
+
+CICD 
+
+https://www.youtube.com/watch?v=RACigTnTGY0 --- Jenkins CICD pipeline to deploy Python flask application on Kubernetes Clusters.
+https://www.youtube.com/watch?v=XE_mAhxZpwU&t=23s --- "CI/CD Pipeline with Jenkins 🚀 Deploy to Kubernetes Step-by-Step!"
+https://www.youtube.com/watch?v=vBoOXP6BkDI --- CI CD Pipeline Using Jenkins | Deploy Docker Image to Kubernetes using Jenkins | JavaTechie
+    https://github.com/Java-Techie-jt/devops-automation/blob/main/Jenkinsfile
+
+
+
+
+
+
+
+
+

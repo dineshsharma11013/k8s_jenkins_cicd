@@ -1,0 +1,131 @@
+0. vim namespace.yml
+	
+kind: Namespace
+apiVersion: v1
+metadata: 
+  name: nginx
+
+
+1. vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 8000
+          command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]   # use this, as we are running on port 8000 in docker-compose
+
+2. vim service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: nginx
+spec:
+  type: NodePort
+  selector:
+    app: deploym
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30007
+
+
+
+20. kubectl get namespace/ns   ---- at 1:29
+21. kubectl get pods -n kube-system  -- there are many pods running in the kube-system (namespace)
+22. kubectl create ns nginx  ----------- we can also create namespace with name nginx
+23. kubectl run nginx --image=nginx  ------ now this will create nginx pod, in the default namespace
+24. kubectl get pods 
+25. kubectl get pods -n nginx    ---- for checking pods in the particular namespace
+26. kubectl delete pod nginx
+27. kubectl run nginx --image=nginx -n nginx ----- now this will create nginx pod in the particular nginx namespace
+28. kubectl get pods -n nginx
+29. kubectl delete pod nginx -n nginx   ---- for delete nginx pod from the nginx nameserver
+30. kubectl delete ns nginx
+
+4. kubectl apply -f namespace.yml 
+5. cat namespace.yml
+6. kubectl get ns
+
+8. kubectl apply -f pod.yml
+9. kubectl get pods ----- nothing will show
+10. kubectl get pods -n nginx -------- select namespace then it will show pods
+11. kubectl exec -it nginx-pod -n nginx -- bash  ---- for connecting nginx pod with the terminal
+12. ls
+13. curl 127.0.0.1
+14. kubectl describe pod/nginx-pod -n nginx
+
+1. kubectl get svc -n nginx
+2. kubectl get pods -o wide -n nginx
+2. kubectl get pods -n nginx
+3. kubectl delete -f pod.yml -------- because deployment.yml will also create pod
+4. kubectl apply -f deployment.yml
+5. kubectl get deployment -n nginx
+6. kubectl get pods -n nginx    ----- this will show 3 pods
+7. kubectl scale deployment/nginx-deployment -n nginx --replicas=5
+8. kubectl get pods -n nginx --------- this will show 5 running pods
+9. kubectl get pods -n nginx -o wide --------- this will give more info regarding pods
+10. kubectl set image deployment/nginx-deployment -n nginx nginx=nginx:1.27.3    v.imp. ----- at 1:59  --- for setting any particar image version and also rolling and update in this
+11. kubectl get pods -n nginx
+
+
+service.yml  --------- at 3:00 --  most important (for understanding this follow from pv, pvc, deployment, then service)
+
+apiVersion: v1
+metadata: 
+  name: nginx-service
+  namespace: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort:80
+  type: ClusterIP
+  
+1. kubectl apply -f service.yml
+2. kubectl get all -n nginx      - for checking all services
+3. kubectl port-forward service/nginx-service -n nginx 80:80 --address=0.0.0.0
+4. sudo -E kubectl port-forward service/nginx-service -n nginx 81:80 --address=0.0.0.0 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

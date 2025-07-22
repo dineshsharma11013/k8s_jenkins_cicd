@@ -1,0 +1,24 @@
+1. i have django project and want to make cicd pipeline using git jenkins dockerhub kubernetes. give me complete description
+
+your-django-project/
+│
+├── Dockerfile
+├── docker-compose.yml
+├── k8s/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│
+├── jenkins/
+│   └── Jenkinsfile
+│
+├── requirements.txt
+├── manage.py
+└── app/
+
+
+
+
+
+
+
+

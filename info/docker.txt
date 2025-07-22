@@ -1,0 +1,14 @@
+1. create repo in docker hub
+2. docker push dinesh11013/testing-django:tagname   ------ after creating repo, this will generate this link
+3. docker build -t dinesh11013/testing-django .       -------- in your local system, create build with this name    
+4. docker build -t dinesh11013/testing-django:tagname .   ---- otherwise build like this
+5. docker login   ---- in your local system
+6. docker push dinesh11013/testing-django:tagname
+7. django_app:
+    image: dinesh11013/testing-django:tagname       # remove or comment out the `build:` section
+
+8. docker images
+9. docker pull dinesh11013/testing-django
+10. docker tag my-django-image:latest dinesh11013/testing-django:tagname    ------ if in local system image is different then change it like this
+11. docker push dinesh11013/testing-django:tagname    
+12. docker rmi my-django-image:latest ---- if needed
