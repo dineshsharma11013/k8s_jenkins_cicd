@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:latest
+          image: dinesh11013/testing-demo:latest
           ports:
             - containerPort: 8000
           command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]   # use this, as we are running on port 8000 in docker-compose
@@ -41,7 +41,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: deploym
+    app: nginx
   ports:
     - port: 8000
       targetPort: 8000
@@ -101,7 +101,7 @@ spec:
       port: 80
       targetPort:80
   type: ClusterIP
-  
+
 1. kubectl apply -f service.yml
 2. kubectl get all -n nginx      - for checking all services
 3. kubectl port-forward service/nginx-service -n nginx 80:80 --address=0.0.0.0
