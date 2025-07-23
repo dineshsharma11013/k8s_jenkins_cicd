@@ -62,7 +62,7 @@ spec:
 30. kubectl delete ns nginx
 
 4. kubectl apply -f namespace.yml 
-5. cat namespace.yml
+5. cat namespace.yml  
 6. kubectl get ns
 
 8. kubectl apply -f pod.yml
