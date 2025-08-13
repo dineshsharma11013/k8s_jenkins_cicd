@@ -12,3 +12,10 @@
 10. docker tag my-django-image:latest dinesh11013/testing-django:tagname    ------ if in local system image is different then change it like this
 11. docker push dinesh11013/testing-django:tagname    
 12. docker rmi my-django-image:latest ---- if needed
+
+
+
+
+
+
+

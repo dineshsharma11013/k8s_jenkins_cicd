@@ -1,0 +1,85 @@
+config.yml
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+- role: control-plane
+  image: kindest/node:v1.31.2     
+- role: worker
+  image: kindest/node:v1.31.2
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  - containerPort: 8000
+    hostPort: 8000
+    protocol: TCP	 
+
+
+0. vim namespace.yml
+	
+kind: Namespace
+apiVersion: v1
+metadata: 
+  name: nginx
+
+
+1. vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: testing-dj
+          image: dinesh11013/testing-demo:latest
+          ports:
+            - containerPort: 8000
+          command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+
+
+service.yml
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: my-service
+  namespace: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort:8000
+  type: ClusterIP
+
+
+kubectl port-forward svc/nginx-service -n nginx 8000:8000 --address=0.0.0.0
+
+
+note: 
+1. ClusterIP does not use nodePort, so remove this
+2. Internal only – only accessible inside the cluster, use load_balancer.txt or nodeport.txt for better use
+
+
+
+
+

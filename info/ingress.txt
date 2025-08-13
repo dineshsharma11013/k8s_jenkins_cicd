@@ -1,0 +1,214 @@
+Deployment and Ingress are commonly used together in Kubernetes — but they serve different purposes and complement each other:
+
+1. Deployment runs your app inside the cluster:
+
+It manages the pods (containers).
+It ensures your app is always running.
+
+2. Service exposes the deployment within the cluster:
+
+Typically a ClusterIP or NodePort service.
+Acts as a stable endpoint for accessing pods.
+
+3. Ingress exposes the service to the outside world:
+
+It uses HTTP(S) rules to forward traffic from external clients to the service.
+Works with an Ingress Controller (like NGINX Ingress Controller).
+
+
+example architechure
+
+Client (Browser)
+     ↓ HTTP
+ [Ingress Controller]
+     ↓ path: /api or /web
+   [Service]
+     ↓
+ [Deployment (Pods)]
+
+
+------- example 1 -------
+
+1. Deployment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx
+        ports:
+        - containerPort: 80
+
+2. Service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: web
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+
+3. Ingress
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-ingress
+spec:
+  rules:
+  - host: myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+
+Note:- 1.You must install an Ingress Controller,  for minikube cluster
+	minikube addons enable ingress
+	check the ingress controller is running:  
+	kubectl get pods -n ingress-nginx
+	
+
+2. If you're on Minikube and testing locally:
+	minikube tunnel
+
+
+
+------- example 2 -------
+
+1. Since you're using Minikube, run:
+	minikube addons enable ingress
+
+2.  check the ingress controller is running:
+	kubectl get pods -n ingress-nginx
+
+3. deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+
+
+4. service.yml
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+
+
+kubectl apply -f deployment.yml
+kubectl apply -f service.yml
+
+
+3. ingress.yml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: yourdomain.com  # OR use a dummy domain like nginx.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+
+
+kubectl apply -f ingress.yml
+
+
+
+1) Since EC2 doesn’t have built-in DNS, you can do either of the following:
+Option A: Use curl via ingress controller's public IP:
+
+curl http://<MINIKUBE_IP>
+
+2) To get the ingress IP:
+
+minikube ip
+
+If you're on EC2, use minikube start --driver=docker --listen-address=0.0.0.0 and expose ports in your Security Group.
+
+Option B: Map a fake domain to your public IP (on your local machine)
+Edit your local machine’s /etc/hosts file:
+
+<EC2_PUBLIC_IP>    nginx.local
+curl http://nginx.local
+http://nginx.local
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+

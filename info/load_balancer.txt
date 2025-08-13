@@ -1,0 +1,91 @@
+config.yml
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+- role: control-plane
+  image: kindest/node:v1.31.2     
+- role: worker
+  image: kindest/node:v1.31.2
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  - containerPort: 8000
+    hostPort: 8000
+    protocol: TCP
+  - containerPort: 30007
+    hostPort: 30007
+    protocol: TCP   
+	 
+
+
+0. vim namespace.yml
+	
+kind: Namespace
+apiVersion: v1
+metadata: 
+  name: nginx
+
+
+1. vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: testing-dj
+          image: dinesh11013/testing-demo:latest
+          ports:
+            - containerPort: 8000
+          command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]   # use this, as we are running on port 8000 in docker-compose
+
+2. service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30007  
+
+kind delete cluster --name=tws-cluster
+kind create cluster --name=tws-cluster --config=config.yml
+
+note: 
+
+Quick decision guide:
+
+Internal communication only → ClusterIP
+Bare-metal / simple external test → NodePort
+Cloud production with public access → LoadBalancer
+
+1. If you’re running Kind / Minikube / bare-metal,
+LoadBalancer won’t work natively unless you set up MetalLB or similar.
+In that case, NodePort or Ingress is the usual choice.
+
+

@@ -1,9 +1,12 @@
+for deployment, please go to nodeport.txt, load_balancer.txt or clusterip.txt
+
 0. vim namespace.yml
 	
 kind: Namespace
 apiVersion: v1
 metadata: 
   name: nginx
+
 
 
 1. vim deployment.yml
@@ -25,29 +28,16 @@ spec:
         app: nginx	
     spec:
       containers:
-        - name: nginx
+        - name: testing-dj
           image: dinesh11013/testing-demo:latest
           ports:
             - containerPort: 8000
           command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]   # use this, as we are running on port 8000 in docker-compose
 
-2. vim service.yml
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-service
-  namespace: nginx
-spec:
-  type: NodePort
-  selector:
-    app: nginx
-  ports:
-    - port: 8000
-      targetPort: 8000
-      nodePort: 30007
+(Remove nodePort — Kubernetes will assign it automatically if needed.)
 
-
+kubectl get svc -n nginx
 
 20. kubectl get namespace/ns   ---- at 1:29
 21. kubectl get pods -n kube-system  -- there are many pods running in the kube-system (namespace)

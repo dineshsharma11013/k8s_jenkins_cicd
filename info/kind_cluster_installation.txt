@@ -1,0 +1,141 @@
+https://www.youtube.com/watch?v=W04brGNgxN4&t=4624s
+  https://github.com/LondheShubham153/kubestarter/tree/main/kind-cluster
+
+--- kind cluster, this will create cluster on a single ec2 instance, no need for creating other ec2 instance
+
+------ kind cluster installation process ---- at 35:00
+
+1. connect with ec2 instance (take medium) 
+2. vim install_kind.sh
+
+
+#!/bin/bash
+
+[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+VERSION="v1.30.0"
+URL="https://dl.k8s.io/release/${VERSION}/bin/linux/amd64/kubectl"
+INSTALL_DIR="/usr/local/bin"
+
+curl -LO "$URL"
+chmod +x kubectl
+sudo mv kubectl $INSTALL_DIR/
+kubectl version --client
+
+rm -f kubectl
+rm -rf kind
+
+echo "kind & kubectl installation complete."
+
+3. chmod 777 install_kind.sh
+4. ./install_kind.sh
+
+5. sudo apt-get update -y
+6. sudo apt-get install docker.io
+7. docker ps  ---- now will throw permission deny error
+8. sudo usermod -aG docker $USER && newgrp docker
+9. docker ps --- now it run
+10. docker --version
+11. kubectl version
+12. kind --version
+
+
+---------------- setting up the kind cluster
+
+1. mkdir kind-cluster
+2. cd kind-cluster
+3. vim cofig.yml  ---- at 47:00
+
+note:-  before applying this, please check service type(like LoadBalancer, nodePort, ClusterIP) then make necessary changes in this, then apply
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+- role: control-plane
+  image: kindest/node:v1.31.2       ----- you can update its version according to the latest by checking its official website
+- role: worker
+  image: kindest/node:v1.31.2
+- role: worker
+  image: kindest/node:v1.31.2
+- role: worker
+  image: kindest/node:v1.31.2
+  extraPortMappings:
+  - containerPort: 80    
+    hostPort: 80         
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP	 
+
+
+save and exit
+
+- containerPort: 80     ----- this is docker port
+    hostPort: 80          ------- this is instance port, we connecting docker port with instance port
+
+4. ubuntu@ip-172-31-12-55:~/kind-cluster$ kind create cluster --name=tws-cluster --config=config.yml
+5. kubectl cluster-info --context kind-tws-cluster
+
+Kubernetes control plane is running at https://127.0.0.1:44335
+CoreDNS is running at https://127.0.0.1:44335/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+6. kubectl get nodes
+
+7. With Kind, changes to the config.yml cannot be applied directly to an existing cluster — you have to recreate it.
+
+# Delete the existing cluster
+kind delete cluster --name tws-cluster
+
+# Recreate the cluster with the updated config
+kind create cluster --name=tws-cluster --config=config.yml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

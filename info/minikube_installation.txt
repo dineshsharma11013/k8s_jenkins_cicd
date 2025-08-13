@@ -1,0 +1,964 @@
+https://www.youtube.com/watch?v=W04brGNgxN4&t=4624s
+https://github.com/LondheShubham153/kubestarter/blob/main/minikube_installation.md
+
+------------------------ minikube installation at 57:00
+
+note: - if we remove namespace, then its related all services pods and others will be removed.
+
+1. sudo apt update
+2. sudo apt install -y curl wget apt-transport-https			
+3. sudo apt install -y docker.io
+4. sudo systemctl enable --now docker
+5. sudo usermod -aG docker $USER && newgrp docker
+6. curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+7. chmod +x minikube
+sudo mv minikube /usr/local/bin/
+8. curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+9. chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+10. minikube start --driver=docker --vm=true 
+11. minikube status
+12. kubectl get nodes
+13. minikube stop
+14. minikube delete
+15. minikube version 
+16. minikube logs
+17. kubectl get nodes --context kind-tws-cluster ----- at 1:02  -- this will show kind cluster details
+18. kubectl config use-context kind-tws-cluster ----- this will make default cluster ----- at 1:03
+19. mkdir kubernetes-in-one-shots
+
+20. kubectl get namespace/ns   ---- at 1:29
+21. kubectl get pods -n kube-system  -- there are many pods running in the kube-system (namespace)
+22. kubectl create ns nginx  ----------- we can also create namespace with name nginx
+23. kubectl run nginx --image=nginx  ------ now this will create nginx pod, in the default namespace
+24. kubectl get pods 
+25. kubectl get pods -n nginx    ---- for checking pods in the particular namespace
+26. kubectl delete pod nginx
+27. kubectl run nginx --image=nginx -n nginx ----- now this will create nginx pod in the particular nginx namespace
+28. kubectl get pods -n nginx
+29. kubectl delete pod nginx -n nginx   ---- for delete nginx pod from the nginx nameserver
+30. kubectl delete ns nginx
+
+			
+
+------- now all the above work will be done through manifest file ----  at 1:33
+------- now creating pod in the nginx namespace   --- at 1:38
+
+1. mkdir nginx
+2. cd nginx
+3. vim namespace.yml
+	
+kind: Namespace
+apiVersion: v1
+metadata: 
+  name: nginx	
+
+save and exit
+
+note- this yml file will create nginx namespace
+
+4. kubectl apply -f namespace.yml 
+5. cat namespace.yml
+6. kubectl get ns
+
+----------------- creating pod file at 1:35
+
+7. vim pod.yml   ---- can also check from the kubectl site regarding pods
+
+kind: Pod
+apiVersion: v1
+metadata: 
+  name: nginx-pod
+  namespace: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80 
+
+
+8. kubectl apply -f pod.yml
+9. kubectl get pods ----- nothing will show
+10. kubectl get pods -n nginx -------- select namespace then it will show pods
+11. kubectl exec -it nginx-pod -n nginx -- bash  ---- for connecting nginx pod with the terminal
+12. ls
+13. curl 127.0.0.1
+14. kubectl describe pod/nginx-pod -n nginx
+
+--------  creating deployment  at 1:45
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+
+set the port 30000 - 32767 in inbound security group with custom tcp, 0.0.0.0/0
+
+
+1. vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 8000
+          command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]   # use this, as we are using for docker
+  
+
+
+
+new_deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: deploym
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: deploym
+    spec:
+      containers:
+        - name: test1
+          image: httpd
+          ports:
+            - containerPort: 80
+
+
+service.yml
+ 
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: nginx
+spec:
+  type: NodePort
+  selector:
+    app: deploym
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30007
+
+1. kubectl get svc -n nginx
+2. kubectl get pods -o wide -n nginx
+
+By default, Minikube using the Docker driver does not expose services to the external network (like your EC2 public IP)
+
+ -------------------- template is like pod, which we are creating here, now we do not need to create other pod from outside
+save and exit
+
+
+2. kubectl get pods -n nginx
+3. kubectl delete -f pod.yml -------- because deployment.yml will also create pod
+4. kubectl apply -f deployment.yml
+5. kubectl get deployment -n nginx
+6. kubectl get pods -n nginx    ----- this will show 3 pods
+7. kubectl scale deployment/nginx-deployment -n nginx --replicas=5
+8. kubectl get pods -n nginx --------- this will show 5 running pods
+9. kubectl get pods -n nginx -o wide --------- this will give more info regarding pods
+10. kubectl set image deployment/nginx-deployment -n nginx nginx=nginx:1.27.3    v.imp. ----- at 1:59  --- for setting any particar image version and also rolling and update in this
+11. kubectl get pods -n nginx
+
+
+note - if status showing ErrImagePull -----  there is some code error
+
+
+------------ replicasets at 2:04   
+
+-- replicasets, this is mostly same as deployment  ---- at 1:48 
+-- we mostly use deployment becuase it is more flexible, and we can do more changes easily in comparison of replicasets and it supports rolling update.
+
+--- vim replicasets.yml
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicasets
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-rep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+
+---- Lables and selectors ---- at 1:50
+
+1. give lables in every pod and define selector in the deployment for using this.
+
+
+1. cp deployment.yml replicasets.yml
+2. do some changes 
+3. kubectl apply -f replicasets.yml
+4. kubectl get replicasets -n nginx
+5. kubectl delete -f replicasets -n nginx
+
+------- Daemonsets  --- at 2:08
+
+--- this ensures that atleast one pod should always run on every worker node.
+--- rest are same as deployment yml file except its name
+
+----- jobs at 2:13
+
+vim job.yml
+
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: demo-job
+  namespace: nginx
+spec:
+  completions: 1     ---- it will run for one time 
+  parallelism: 1     ---- how many pods are required to complete this
+  template:
+    metadata:
+      name: demo-job-pod
+      labels: 
+	app: batch-task
+    spec:
+	containers:
+	- name: batch-container
+	  image: busybox:latest     ----- this image is used for only running commands
+	  command: ["sh", "-c", "echo hello dosto && sleep 10"]
+	restartPolicy: Never
+
+1. kubectl apply -f job.yml
+2. kubectl get job -n nginx
+3. kubectl get pods -n nginx
+4. kubectl logs pod/demo-job-qqrkh -n nginx --------- this will print job logs
+5. kubectl delete -f job.yml
+	
+note: check all status list of the pods
+
+
+---- cron job ----- at 2:21
+
+vim cron-job.yml
+
+
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: minute-backup
+  namespace: nginx
+spec:
+  schedule: "* * * * *"  ----- this is for every minute  "*/2 * * * *"   ---- it will run on every 2 minute at 2:24, check this also
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: minute-backup
+	  labels:
+  	    app: minute-backup
+       
+       spec:
+	 containers:
+	 - name: backup-container
+	   image: busybox
+	   command:        -------- we can also run command in different lines
+	   - sh
+	   - -c
+	   - >
+	     echo "Backup Started";
+	     mkdir -p /backups &&
+	     mkdir -p /demo-data /backups &&
+	     echo "Backup Completed";
+	   volumeMounts:
+	     - name: data-volume
+	       mountPath: /demo-data
+	     - name: backup-volume
+	       mountPath: /backups
+	 restartPolicy: OnFailure
+	 volumes:
+	   - name: data-volume
+	     hostPath:
+		path: /demo-data
+		type: DirectoryOrCreate     --- if there is directory then create
+	   - name: backup-volume
+	     hostPath:
+		path: /backups
+		type: DirectoryOrCreate
+
+1. kubectl apply -f cron-job.yml
+2. kubectl get pods -n nginx
+3. kubectl logs pod/minute-backup-xyz -n nginx
+
+
+
+--------- persistent volume and persistent volume claim ------ at 2:40
+
+vim persistentVolume.yml
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: local-pv
+  namespace: nginx
+  labels:
+    app: local
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/data
+
+
+1. kubectl apply -f persistentVolume.yml
+2. kubectl get pv
+
+vim persistentVolumeClaim.yml
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: local-pvc
+  namespace: nginx
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-storage
+
+1. kubectl get ns
+2. kubectl get pv
+3. kubectl apply -f persistentVolumeClaim.yml
+4. kubectl get pv
+5. kubectl delete pvc/local-pvc
+6. kubectl delete pv/local-pv
+7. kubectl apply -f persistentVolume.yml
+8. kubectl get pv -n nginx
+9. kubectl apply -f persistentVolumeClaim.yml
+10. kubectl get pv -n nginx
+11. kubectl get pods -n nginx
+12. kubectl describe pod-name -n nginx
+13. kubectl get pods -n nginx
+14. kubectl get nodes
+15. docker ps   ---- mnt/data folder is created in the docker, for checking this follow this steps
+16. docker exec -it container-id bash
+17. ls
+18. cd mnt
+19. cd data
+20. ls
+21. exit
+
+now we will mount deployment.yml with volume for accessing this storage  at 2:50
+
+vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx-dep-pod
+      labels:
+        app: nginx	
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+          - mountPath: /var/www/html
+            name: my-volume
+      volumes:
+        - name: my-volume
+          persistentVolumeClaim:
+            claimName: local-pvc
+
+
+1. kubectl apply -f deployment.yml
+2. kubectl get pods -n nginx
+3. kubectl describe pod-name -n nginx ------- if getting pod in pending status then check for error
+
+
+note: for running deployment to the server we use service.yml file
+
+service.yml  --------- at 3:00 --  most important (for understanding this follow from pv, pvc, deployment, then service)
+
+apiVersion: v1
+metadata: 
+  name: nginx-service
+  namespace: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort:80
+  type: ClusterIP
+
+1. kubectl apply -f service.yml
+2. kubectl get all -n nginx      - for checking all services
+3. kubectl port-forward service/nginx-service -n nginx 80:80 --address=0.0.0.0
+4. sudo -E kubectl port-forward service/nginx-service -n nginx 81:80 --address=0.0.0.0 
+
+now this will run on public_ip:81
+
+note: for complete demo, please check from 3:12  ----------- most important ---- check complete process of deploying
+after that check ingress 
+
+
+
+----- ingress 3:30   ---- check ingress again for setup
+
+https://github.com/kubernetes/ingress-nginx ----- ingress controller
+ --- this will help in redirect, proxy and in load balancing
+
+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-notes-ingress
+  namespace: nginx  
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: /nginx
+        backend:
+          service:
+            name: nginx-service
+            port: 
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: notes-app-service
+            port: 
+              number: 8000
+
+1. kubectl apply -f ingress.yml
+2. kubectl get ing -n nginx
+3. kubectl get all -n nginx
+
+4. kubectl get service -n ingress-nginx
+5. kubectl port-forward service/ingress-nginx-controller -n ingress-nginx 80:80 --address=0.0.0.0
+
+6. sudo -E kubectl port-forward service/ingress-nginx-controller -n ingress-nginx 8080:80 --address=0.0.0.0
+7. 
+
+---- Annotation
+
+------ statefulset ------- at 3:48
+
+-> if we created 5 replicas in this, then its pod will carry one state, if one pod is deleted then new pod will carry the same state. 	
+
+vim namespace.yml
+
+kind: Namespace
+apiVersion: v1
+metadata: 
+  name: MySQL
+
+kubectl apply -f namespace.yml
+
+
+1. mkdir mysql
+2. cd MySQL
+3. vim statefulset.yml
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: mysql-statefulset
+  namespace: mysql
+
+spec:
+  serviceName: mysql-service   # we will mention service name here
+  replicas: 3
+  selector:
+    matchLables:
+      app: MySQL
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+	env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+   	    secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
+	- name: MYSQL_DATABASE
+	  valueFrom:
+  	    configMapKeyRef:
+    		name: mysql-config-map
+    		key: MYSQL_DATABASE	
+       
+        volumeMounts:
+ 	- name: mysql-data
+          mountPath: /var/lib/MySQL	
+   volumeClaimTemplates:       # this will with the alignment of template
+       - metadata:
+         name: mysql-data
+         spec:
+           accessModes: [ "ReadWriteOnce" ]  
+	   resources:
+             requests:
+               storage: 1Gi
+
+
+
+4. vim service.yml
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-service
+  namespace: mysql
+spec:
+  clusterIP: None
+  selector:
+    app: mysql
+  ports:
+  - name: mysql
+    protocol: TCP
+    port: 3306
+    targetPort: 3306	 	
+ 
+
+ 
+5. kubectl apply -f service.yml
+6. kubectl apply -f statefulset.yml
+7. kubectl get pods -n mysql
+8. watch kubectl get pods -n mysql
+9. ls
+10. kubectl get svc
+11. kubectl get pods -n mysql
+12. kubectl exec -it mysql-statefulset-0 -mysql -- bash
+13. show databases
+14. exit
+15. kubectl delete pod mysql-statefulset-0 -n mysql 
+16. kubectl get pods -n mysql
+
+	
+---- configMaps ------------ at 4:10
+
+1. vim configmap.yml
+
+kind: ConfigMap
+apiVersion: v1
+metadata: 
+  name: mysql-config-map
+  namespace: mysql
+data:
+  MYSQL_DATABASE: devops
+  	
+	
+2. kubectl apply -f configMap.yml
+3. kubectl get configmap -n mysql
+4. vim statefulset.yml
+5. now we will use configmap in then statefulset like this
+
+valueFrom:
+  configMapKeyRef:
+    name: mysql-config-map
+    key: MYSQL_DATABASE
+
+6. kubectl apply -f statefulset.yml
+7. kubectl get statefulset.yml -n mysql
+8. kubectl delete statefulset/mysql-statefulset -n mysql
+9. kubectl apply -f statefulset.yml
+10. kubectl get pods -n mysql
+
+------- 11. vim secrets.yml
+
+apiVersion: v1
+kind: Secret
+metadata:
+ name: mysql-secret
+ namespace: mysql
+data:
+  MYSQL_ROOT_PASSWORD: cm9vdAo=   # base64 encoded for "root"
+
+
+12. echo "root" | base64  ---- for generating encrypted password
+cm9vdAo=
+13. now we will change password in the statefulset.yml like this
+
+env:
+- name: MYSQL_ROOT_PASSWORD
+  valueFrom:
+   secretKeyRef:
+     name: mysql-secret
+     key: MYSQL_ROOT_PASSWORD
+
+14. kubectl apply -f secrets.yml
+15. kubectl get secret -n mysql
+16. kubectl apply -f statefulset.yml
+17. kubectl get pods -n mysql
+18. kubectl exec -it mysql-statefulset-1 -n mysql -- bash
+19.  mysql -u root -p
+20 show databases
+
+----- Resourses and quota
+
+we use resources in deployment.yml, so that to define requests and limits of a pod
+same configuration we can use for the statefulset.yml also
+
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports: 
+    - containerPort: 80
+    resources:   # from here we will use resourses	
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi 
+
+
+---- probes
+
+these are of three types, liveness probe, readiness probe and startup probe
+
+these are used just to check whether pod is working properly or not
+
+deployment.yml
+
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports: 
+    - containerPort: 8000
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 8000
+        
+
+
+1. kubectl apply -f deployment.yml
+2. kubectl get pods -n nginx
+3. kubectl describe pods/pod_name
+
+--- Taints and Tolerations
+
+
+
+
+
+--- it is used for handling traffic and routes on the cluster
+
+
+
+
+--------- HPA (Horizontal pod autoscaling)  at 5:00
+
+1. kubectl get nods
+2. kubectl top node or kubectl top pod ----- to chek traffic details and its metrics details
+3. kubetcl get ns
+4. we have to install metrics for traffic details
+5. minikube addons enable metrics-server ---- if we are using minikube cluster, then with this we will install metrics
+6. if we are using kind cluster then its process is  5:05
+
+search in the google - Kubernetes kind cluster metrics server
+
+opened git link
+
+1. kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.6.1/components.yaml
+2. edit the metrics server deployment
+
+kubectl -n kube-system edit deployment metrics-server  
+
+3. https://github.com/LondheShubham153/kubestarter/tree/main/HPA_VPA
+
+add these lines spec->containers->args
+
+- --kubelet-insecure-tls
+- --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
+
+
+---- check at 5:08 for proper
+https://github.com/LondheShubham153/kubestarter
+
+4. kubectl -n kube-system rollout restart deployment metrics-server
+
+5. kubectl get pods -n kube-system
+6. kubectl top node
+7. kubectl describe pod metices_name -n kube-system
+8. kubectl taint node tws-cluster-worker prod=true:NoSchedule-node/tws-cluster-worker untained
+9. kubectl taint node tws-cluster-worker prod=true:NoSchedule-node/tws-cluster-worker2 untained
+10. kubectl taint node tws-cluster-worker prod=true:NoSchedule-node/tws-cluster-worker3 untained
+11. kubectl get pods -n kube-system
+12. kubectl top nodes
+13. kubectl top pod -n nginx
+14. kubectl delete -f pod.yml 
+
+apache server
+
+1. mkdir apache
+2. vim namespace.yml
+
+kind: Namespace
+apiVersion: v1
+metadata:
+ name: apache
+
+3. kubectl apply -f namespace.yml
+4. vim deployment.yml
+
+kind: Deployment
+apiVersion: apps/v1
+metadata: 
+ name: apache-deployment
+ namespace: apache
+spec:
+  replicas: 1
+  selector:
+    matchLables:
+      app: apache
+  template:
+    metadata:
+      name: apache
+      labels:
+        app: apache
+    spec:
+      containers:
+      - name: apache
+        image: httpd:latest
+        ports: 
+        - containerPort: 80
+        resources:
+          requests:
+             cpu: 100m
+             memory: 128Mi
+          limits: 
+             cpu: 200m
+             memory: 256Mi
+
+5. kubectl apply -f deployment.yml
+6. kubectl get pods -n apache
+7. vim service.yml
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: apache-service
+  namespace: apache
+spec:
+  selector:
+      app: apache
+  ports:
+    - protocol: TCP
+      port: 80  # exposed port in the cluster
+      targetPort: 80 # container port
+
+  type: ClusterIP
+
+8. kubectl apply -f service.yml
+9. kubectl get all -n apache 
+10. kubectl port-forward service/apache-service -n apache 82:80 --address=0.0.0.0
+11. sudo -E kubectl port-forward service/apache-service -n apache 82:80 --address=0.0.0.0 &
+12. give security of 82 in the instance
+
+public_ip:82
+
+13. kubectl get pods -n apache
+14. kubectl scale deployment apache-deployment -n apache --replicas=3
+15. kubectl get pods -n apache
+
+now we creating hpa.yml
+
+vim hpa.yml
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: 
+  name: apache-hpa
+  namespace: apache
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: apache-deployment
+    apiVersion: apps/v1
+ minReplicas:1
+ maxReplicas:5
+
+ metrics:
+  - type: Resource
+    resource:
+      name: cpu
+    target:
+      type: Utilization
+      avaerUtilization: 5
+
+17. kubectl get pods -n apache  5:30
+  kubectl apply -f hpa.yml
+
+18.  for testing load on the website 5:32
+
+19. kubectl get hpa -n apache
+20. kubectl run -i --tty load-generator --image=busybox -n apache /bin/sh     at 5:38
+22. watch kubectl get pods -n apache
+
+
+
+
+
+ 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+  
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
